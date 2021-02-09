@@ -1,0 +1,236 @@
+You’ll start by expanding your knowledge of state management by making a complex application more efficient. 
+ Redux isn’t directly tied to React, but it is often used with large-scale React applications
+to avoid prop drilling, which requires developers to go through layers of components to get data to other parts of the React component tree. I
+manage online payments using a popular service called Stripe.
+
+Stripe (Links to an external site.) is a suite of online payment processing APIs that powers commerce for 
+online businesses of all sizes, allowing them to accept and process payments online. 
+You’ll use the stripe (Links to an external site.) npm package to integrate Stripe into your application.
+
+Stripe.js (Links to an external site.) is Stripe’s JavaScript library for building payment flows. 
+It uses Stripe Elements, a set of prebuilt, customizable UI components to allow platforms to collect sensitive payment information. 
+Stripe.js also provides a single interface for Apple Pay, Google Pay, and the Payment Request API. For the purposes of this module's 
+application, you’ll use the @stripe/stripe-js 
+(Links to an external site.) npm package to redirect your app to a prebuilt Stripe checkout page.
+
+Use the React Context API to implement a Redux-like store to manage state globally.
+
+Write Redux-like actions and reducers with the necessary tests in place.
+ With our refactor, we'll make it so that no component should have to worry about managing state for other components to consume or update. 
+ We'll use functionality that's built into React to create state and the means to update state outside of the React component-architecture in a global state object.
+  but the important data that provides the real content for the site will be managed globally.
+   we don't need to install all of them manually, because the root level's package.json has the scripts ready to do all of them! 
+The Home page component manages the state currentCategory, which is passed to the ProductList component as a prop and instructs which category's products should be retrieved using Apollo. 
+by taking that returned data from the query result and storing it in a global state, 
+Redux allows developers to centralize all of the data needed to make an application run properly 
+ and set it up in a global object that makes the data easy to use by the UI but also predictable in terms of how it's updated.
+
+Redux is built on:
+Single source of truth: By having all of the application's data stored in one location that isn't tied to any single piece of the UI, 
+we can easily manipulate our app's UI without having to affect any of it.
+
+State is read-only: This doesn't mean state can't be updated, but rather that it cannot be directly updated. 
+Instead, it should be overwritten with a new iteration of that state. This makes it so that the 
+application's state is updated in a predictable fashion and the UI won't ever get out of sync with its data.
+
+State is changed through pure functions: This means that to make an update to state, we don't 
+actually manipulate it. Instead, we overwrite it with a new version of it. This lowers the chance of any data being 
+accidentally affected by an action. We do this by creating what's known as a reducer, which runs as a result of an action.
+
+What's important to note here is that Redux does not have to be used with React. 
+Developers put it in place to decouple their state management from the UI, which allows them to change UI libraries if they want or need to
+The name for a global state object is often referred to as a store
+As we learned earlier, a global store is built on two important pieces when it comes to updating state:
+
+
+Actions: These define the types of events that can be emitted to update state. State can only be updated if it's a predefined action
+
+Reducers: The actual functionality that carries out the emitted action to update state.
+
+Because of this relationship, we'll need to create our actions before we create our reducers, so let's get started.
+
+In the utils folder of our client/src directory, create two files: actions.js, reducers.js
+export const UPDATE_PRODUCTS = "UPDATE_PRODUCTS";
+export const UPDATE_CATEGORIES = "UPDATE_CATEGORIES";
+export const UPDATE_CURRENT_CATEGORY = "UPDATE_CURRENT_CATEGORY";
+With these three actions, we're defining how three parts of our state will be maintained and updated:
+
+UPDATE_PRODUCTS is used by the ProductList component. Right now, we're getting all of our product data from the server, and Apollo caches the results.
+This is great for performance, but it also means we have to go through Apollo every time we want to update that list.
+The end goal here is to store the data retrieved for products by Apollo in this global state.
+This way, we can add offline capabilities later and persist our product data!
+
+
+UPDATE_CATEGORIES works a lot like UPDATE_PRODUCTS in that we want to take the list of categories retrieved from the server by Apollo and store it in this global state.
+Again, this will allow us to easily add offline capabilities at a future point in this project.
+
+UPDATE_CURRENT_CATEGORY is sort of the connecting piece of data for the previous two actions we created,
+in that we want to be able to select a category from the state created by the UPDATE_CATEGORIES action 
+and display products for that category from the list we create from the UPDATE_PRODUCTS action.
+
+
+A reducer is a function that updates state by returning a new state object and never alters the original state object.
+The key takeaway here is that state is intended to be immutable, meaning it never should be directly altered in any way.
+
+// original state
+const state = {
+  name: 'Lernantino',
+  email: 'lernantino@gmail.com' 
+}
+
+// update (or mutate) state directly
+state.email = 'lernantino99@gmail.com';
+
+But this isn't a great idea when we need to keep track of an application's state in the proper way,
+as we simply reached in and altered something without alerting the rest of the application that it's been altered.
+
+// original state
+const state = {
+  name: 'Lernantino',
+  email: 'lernantino@gmail.com' 
+};
+
+// create a new version of state by making a copy of the original state's data and updating only the part that has changed
+const updatedState = {...state, email: 'lernantino99@gmail.com'};
+
+here is that we now have the original state and the updated state in two separate entities,
+The important thing for us to know is that when updating state, it's important that we do so by creating a new version of it rather than reaching out and directly altering it.
+First, we'll write a test for updating that products list.
+his mean's we'll be testing the UPDATE_PRODUCTS action to see if we can add a product to the products array. 
+
+With this test, we look to create a new state object. 
+When we created a new object to hold all of our state, most of it didn't change!
+It was just copied over into a new object so we can compare the original to the updated state objects
+
+
+This newState object will be the result of what comes from a function that we haven't created yet, called reducer().
+This function accepts the following two parameters:
+
+The current state object, so we can make our copy of it for the new state.
+
+The action we're performing to update state, which is broken into the following two parts as an object:
+
+type: This is the type of action we're performing, and should be one of the predefined actions we created earlier.
+
+value: This won't always have the name value, but it is a name representative of the new data we want to use with the action.
+
+we pass in the current state held in initialState and then our action, indicating that we want to update our products list with the contents held in the products array.
+
+ The expect() functions we run afterwards will help us confirm that we successfully added our products to the newState and didn't affect initialState in any way, shape, or form.
+ Adding this code to the reducers.js file imports the possible actions we can perform and creates a function called reducer()
+
+When the function executes, we pass the value of the action.type argument into a switch statement and compare it to our possible actions.
+If it's that action type, we return a new object with a copy of the state argument using the spread ...  operator and then set the products key to a value of a new array with the action.products
+If it's not that action type, we make no change to state and return it as is.
+This one is very similar to UPDATE_PRODUCTS, but it will be used to test how we can update the categories array.
+We now want to execute the UPDATE_CATEGORIES action and update our category list to be a new array of categories.
+we use one that will look for a matching action value and return a new copy of state from there
+
+create that global state object and create functionality for it to use this reducer() function!
+
+What we need to do is set up a function that will know how to take in our state and update it through our reducer() function. 
+Luckily, we'll lean on another React Hook, called useReducer()!
+
+This function, useProductReducer(), will be used to help initialize our global state object and then provide us with the functionality for updating that
+state by automatically running it through our custom reducer() function.
+The useState() Hook is great for managing simpler amounts of state, like form field values and the status of a button being clicked. 
+The useReducer() Hook is meant specifically for managing a greater level of state, like we're doing now.
+
+The Home page component keeps track of the current category we are viewing.
+
+The CategoryMenu component keeps track of our category list from an Apollo query.
+
+The ProductList component displays products from an Apollo query.
+
+
+All we're doing is learning another way of managing state so that it's decoupled from our components.
+With our state decoupled, we can use it across more components and pages in our application and avoid making more HTTP calls than necessary or more importantly, prop drilling.
+Prop drilling is what happens when we manage state at a top-level component that needs to be passed through multiple child components as props. 
+To remedy this, creating a global state object will allow any component in our application 
+to use and update state without having to worry about receiving that information as props.
+
+Create a New Context Object
+Create a file in the utils directory called GlobalState.js. In that file, 
+let's import a few tools from React and the useProductReducer() function we created earlier with the following code:
+
+createContext will be used to instantiate a new Context object. The more meaningful term we can use here is that 
+we're using it to create the container to hold our global state data and functionality so we can provide it throughout our app!
+
+useContext is another React Hook that will allow us to use the state created from the createContext function.
+When we run the createContext() function, it creates a new Context object
+
+
+Every Context object comes with two components, a Provider and Consumer
+The Provider is a special type of React component that we wrap our application in so it can make the state data that's 
+passed into it as a prop available to all other components.
+
+The Consumer is our means of grabbing and using the data that the Provider holds for us.
+What we'll do now is create a custom provider function that will be used to manage and update our state using the reducer we created earlier as well.
+Because that wraps it around the useReducer() Hook from React, every time we run this useProductReducer() function, 
+we receive the following two items in return:
+
+state is the most up-to-date version of our global state object.
+
+dispatch is the method we execute to update our state. 
+It is specifically going to look for an action object passed in as its argument, as we'll soon see.
+
+After the useProductReducer() completes and provides us with the new state and function to update state (e.g., dispatch), we then return the StoreContext's 
+<Provider> component with our state object and dispatch the function provided as data for the value prop.
+the StoreProvider function isn't as much of a function as it is our own custom <Provider> component!
+That's why the parameters defined at the top, the value and ...props, are there t's actually set up to accept props if it needs to, and it does!
+
+
+The value prop is good to have included, as it opens us up to pass in more data for state if we need to
+The other prop, or rather ...props, is in place to handle any other props the user may need
+
+Namely, we'll need to use props.children, as this <StoreProvider> component will wrap all of our other components, making them children of it.
+If we didn't include {...props} in our returning <Provider> component, nothing on the page would be rendered!
+make it available to all of our other components through a special <Provider> component. 
+The last thing we need to do is create the custom function using the useContext() Hook to be used by the components 
+that actually need the data our <StoreProvider> will be, well . . . providing!
+
+We just created our own custom React Hook! When we execute this function from within a component, we will receive the [state, dispatch] data our StoreProvider provider manages for us.
+This means that any component that has access to our StoreProvider component can use any data in our global state container or update it using the dispatch function.
+et's update App.js to make our global state available to all of our components.
+Did you notice how we use the <StoreProvider> to wrap all of our components? Everything between those JSX tags are considered the children of <StoreProvider>;
+ that's why it was so important that we had ...props in the definition of our StoreProvider function!
+ But we now know that we can use our useStoreContext() function to grab the state from the <StoreProvider> component and use the returning dispatch method to update it—great job!
+
+We import the global state storecontext consumer in the component
+ useQuery() Hook from Apollo to retrieve all of our category data and use it for the UI. 
+we want to add offline capabilities later, this may become more difficult.
+Instead, we'll query our category data, store it into the global state object, 
+and then use the category data from the global state object to use it in the UI instead. 
+
+we immediately call upon the useStoreContext() Hook to retrieve the current state from the global state object and the dispatch() method to update state.
+e only need the categories array out of our global state, we simply destructure it out of state so we can use it to provide to our returning JSX.
+We need to somehow take the categoryData that returns from the useQuery() Hook and use the dispatch() method to set our global state.
+useQuery() is an asynchronous function? We can't simply just add the dispatch() method below it, as categoryData won't exist on load!
+ we need to use the React useEffect() Hook, which was created specifically for times like this.
+ Now when this component loads and the response from the useQuery() Hook returns, 
+ the useEffect() Hook notices that categoryData is not undefined anymore and runs the dispatch() function,
+ useEffect() Hook works.
+ It is a function that takes two arguments, a function to run given a certain condition, and then the condition. 
+ In this case, the function runs immediately on load and passes in our function to update the global 
+ state and then the data that we're dependent on, categoryData and dispatch.
+
+useEffect() Hook is that it not only runs on component load, but also when some form of state changes in that component.
+So when useQuery() finishes, and we have data in categoryData, the useEffect() Hook runs again and notices that categoryData exists! 
+Because of that, it does its job and executes the dispatch() function.
+e also set it up where when we click one of those categories, we save that category's _id value to the global state as well!
+
+Again, we immediately execute the useStoreContext() function to retrieve the current global state object and the dipatch() method to update state.
+We then destructure the currentCategory data out of the state object so we can use it in the filterProducts() function.
+We then implement the useEffect() Hook in order to wait for our useQuery() response to come in. 
+Once the data object returned from useQuery() goes from undefined to having an actual value, we execute our dispatch() function, 
+ instructing our reducer function that it's the UPDATE_PRODUCTS action and it should save the array of product data to our global store. 
+ in the return statement to use state.products.length instead of products.length, since we are now retrieving products from the state object.
+ What we'll change here is that we want to display that item's data from the global state instead of from the useQuery() response. 
+
+ useEffect() Hook here has to check for a couple of things. It first checks to see if there's data in our global state's products array.
+ If there is, we use it to figure out which product is the current one that we want to display.
+ It does this finding the one with the matching _id value that we grabbed from the useParams() Hook.
+ . The useEffect() Hook is set up so that if we don't, we'll use the product data that we returned from the useQuery() Hook 
+ he Hook's functionality is dependent on them to work and only runs when it detects that they've changed in value! 
+ This is known as the dependency array.
+ 

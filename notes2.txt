@@ -1,3 +1,121 @@
 The shopping cart will leverage the global store, so we'll need to create new actions and reducers. 
 Among the new properties that we'll need to add to the global state are an array for the cart items and a Boolean to toggle the cart's visibility.
 This means that we'll need to create new reducers to properly update these state values. 
+These statements represent all of the actions you might want to perform with a shopping cart
+a reducer should treat the original state as immutable, so the test should verify that the initialState was not affected by the update.
+We'll also set cartOpen to true so that users can immediately view the cart with the newly added item, 
+This test will remove both cart items from initialState, one after the other. 
+In this test, we want to ensure that only the first item's quantity is updated, because its _id matches the _id given to the reducer() function.
+This test expects cartOpen to be the opposite of its previous value each time the action is called. In reducers.js, add the following case to fulfill the test:
+The position: relative declaration will return the cart to its default position in the layout instead of being fixed in the top-right corner.
+This component expects an item object as a prop and will use that object's properties to populate the JSX. 
+Toggling the shopping cart's visibility doesn't require any data from the server, making it the simpler reducer.
+This is a good example of state being used to maintain the "state" of the UI!
+You'll use the custom useStoreContext Hook to establish a state variable and the dispatch() function to update the state.
+Without a global store, you'd need to implement extra local state management and prop passing in multiple 
+places to get the selected products into the Cart component
+Note that we only destructured the dispatch() function from the useStoreContext Hook, because the CartItem component has no need to read state.
+Anytime an <input> element's value changes, an onChange event will occur. 
+We can capture that event and send the element's new value to the reducer.
+By the end of this lesson, the application won't look much different. But we'll have cached all of the important data to be used offline or to be made readily available on visit using IndexedDB, 
+With this IndexedDB database, we'll accomplish the following two main performance enhancements:With this IndexedDB database, 
+we'll accomplish the following two main performance enhancements:
+
+We'll store all of the product and category data from the database in IndexedDB. This way, even without an internet connection, 
+users can still navigate the application, view items, and even add items to their shopping cart.
+
+If the user leaves the application and comes back later, we'll have persisted the items in their shopping cart. 
+A user is more likely to complete their order if they don't have to add everything back into the cart!
+
+First we need to set up all of the information for the database, because IndexedDB is a clean slate in the browser
+We need to create the database name, make object stores to hold the different data, 
+nd establish how that data can be accessed in those stores. 
+idb created in helpers.js in utils
+
+Remember, IndexedDB is asynchronous and event driven.This means that if we want it to be on and listening all the time, 
+we'll have to write a lot of what-if type functionality to handle all of the moving parts.
+
+Instead, we'll use one function that opens the database connection, creates the object store (if it's the first time using it on the machine), 
+and runs whatever transaction we need to have run on a successful connection. 
+
+So when we call the function, 
+we'll open the connection to the database and then connect to the object store that we pass in as storeName.
+
+Then we'll perform a transaction, using the method and object values to help carry it out.
+We also wrap the whole thing in a Promise, making it a lot easier to work with IndexedDB's asynchronous nature.
+
+So now whenever we run this idbPromise() function, we establish a connection to the database
+Remember that with IndexedDB, the .onupgradeneeded() event only runs if the browser notices that the version number in the .open() method has changed 
+r if the browser has never connected to the database before and 1 is the new version. 
+
+This is good, though, because we only need to create the three object stores once. 
+For each of them, we provide a name of the object store and the keyPath name
+But now, we'd like to provide the actual index value we want to use for looking up data. 
+Because that index value will be the MongoDB _id property for each product or category, it makes sense to set the keyPath name to _id.
+
+when the database connection opens successfully, we immediately save a reference of the database to the db variable.
+Then we open a new transaction using the .transaction() method, passing in the object store that we want to interact with 
+and the permissions we want in this transaction.
+
+
+The storeName—one of the three stores we created for the 
+database—will be passed in as an argument in the idbPromise() function when we call it from a component.
+
+We'll save a reference to that object store so that we can perform a CRUD method on it to read, write, or update the data.
+Then we set up two more event listeners, one for errors and one for closing the connection to the database when we're done.
+
+Above the tx.oncomplete event listener, add the following code to check which value we passed into the function as a method and perform that method on the object store:
+
+If it's put, then we run the .put() method on the object store, overwriting any data with the matching _id value from the object
+and adding it if it can't find a match.
+
+If it's get, we'll simply get all data from that store and return it.oth the put and get methods will return the data to wherever we call this idbPromise() function.
+We should set it up so that when we save product data from the useQuery() Hook's response to the global state object with the dispatch() method, 
+we also save each file to the products object store in IndexedDB using the idbPromise() function.
+
+ retrieving it without an internet connection!
+ Let's set it up so that if the useQuery() Hook isn't establishing a connection to the GraphQL server, we'll use the data stored in IndexedDB instead.
+ Okay, now we'll update the useEffect() Hook to check if we have data returning from a global state and stored in products
+
+ If yes, let's get the current product and save it to the local state currentProduct.
+
+ If no, we don't have data in global state, let's check whether we retrieved data from the server using the useQuery() Hook. 
+ If yes, save that data to global state and to the product object store in IndexedDB, 
+ and we'll run the useEffect() Hook over again to make that first if statement run.
+
+ If no, we don't have data in global state and we don't have a connection to the server, the loading data will be undefined. 
+ We'll then go to the product object store in IndexedDB and retrieve the data from there to provide the global state object.
+
+ useEffect() Hook React provides. It will constantly check the dependency array for a change in any of the values listed in it and continue to run the useEffect()
+
+ Great, so one of the main tasks with IndexedDB is handled. All of the important data that we retrieve from the server to browse this online store is now cached for offline mode! 
+ Although a good user experience for an e-commerce application stems from multiple features, none may be more 
+ important than the ability to leave the app and continue shopping at a later date without losing an active shopping cart. 
+
+ In offline mode, we still want users to be able to add products and update quantities of a product in their shopping carts. 
+ So we'll have to update the Detail and ProductItem components to save data to IndexedDB as they add more to the cart.
+
+ We need to set up the Cart component to look for existing data in IndexedDB on load so 
+ that we can populate any saved items into the cart and allow users to continue where they left off.
+
+ We need to persist any changes that occur within the shopping cart, like updating product 
+ quantities or removing items from the cart. We'll have to update the CartItem component to handle this.
+
+ First things first. Open the Detail component (you may still have it open from before). 
+ Within that component, you need to update the addToCart() and removeFromCart() functions to also interact with IndexedDB.
+
+ Now, every time we update the global state, that update will also be reflected in IndexedDB.
+ We want to set up this component to check for items saved in the cart object store of IndexedDB every single time the component opens.
+ Now let's set up the useEffect() Hook in the Cart component's function to check if there's anything in the state's cart property on load
+
+ With this function in place, we're checking to see if state.cart.length is 0, then executing getCart() to retrieve the items from the cart object store and save it to the global state object. 
+ We dispatch the ADD_MULTIPLE_TO_CART action here because we have an array of items returning from IndexedDB, even if it's just one product saved. 
+ This way we can just dump all of the products into the global state object at once instead of doing it one by one.
+
+ We list all of the data that this useEffect() Hook is dependent on to execute. The Hook runs on load no matter what, 
+ but then it only runs again if any value in the dependency array has changed since the last time it ran.
+
+ Let's navigate to CartItem/index.js. Because we can update the global state of the cart from there, we need to set it up so that those updates are reflected in IndexedDB as well!
+ We can now remove an item directly from the cart, and it'll be reflected both in global state and in the cart object store.
+ Let's now update the onChange() function in this component to either remove an item or update an item's quantity from the cart object store, as well as global state.
+ 

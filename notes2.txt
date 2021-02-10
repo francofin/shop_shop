@@ -1,0 +1,3 @@
+The shopping cart will leverage the global store, so we'll need to create new actions and reducers. 
+Among the new properties that we'll need to add to the global state are an array for the cart items and a Boolean to toggle the cart's visibility.
+This means that we'll need to create new reducers to properly update these state values. 
